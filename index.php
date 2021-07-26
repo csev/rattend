@@ -63,7 +63,7 @@ if ( $USER->instructor ) {
 ?>
 <script>
 $(document).ready(function(){
-    $.getJSON('<?= addSession('getrows.php') ?>', function(rows) {
+    $.getJSON('<?= addSession('api/getrows.php') ?>', function(rows) {
         window.console && console.log(rows);
         context = { 'rows' : rows,
             'instructor' : true,
