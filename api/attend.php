@@ -2,7 +2,6 @@
 require_once "../../config.php";
 
 use \Tsugi\Core\LTIX;
-use \Tsugi\Core\Settings;
 use \Tsugi\UI\Output;
 use \Tsugi\Util\U;
 use \Tsugi\Util\Net;
@@ -19,9 +18,34 @@ $data = json_decode($json);
 
 // Model
 $p = $CFG->dbprefix;
-$old_code = Settings::linkGet('code', '');
+$old_code = $LAUNCH->link->settingsGet('code', $old_code);
+$send_grade = $LAUNCH->link->settingsGet('grade');
+$match = $LAUNCH->link->settingsGet('match');
+$ip = Net::getIP();
+
 $retval = new \stdClass();
 $retval->status = "failure";
+$retval->detail = "";
+
+if ( strlen($match) > 0 && substr($match, 0, 1) == '/' ) {
+    if (!preg_match($match, $ip) ) {
+        $retval->detail = __('IP Address '.$ip.' does not match (regex).');
+        $retval->status = "failure";
+        Net::send403();
+        Output::jsonOutput($retval);
+        return;
+    }
+}
+
+if ( strlen($match) > 0 && substr($match, 0, 1) != '/' ) {
+    if ( strpos($match, $ip) === false ) {
+        $retval->detail = __('IP Address '.$ip.' does not match.');
+        $retval->status = "failure";
+        Net::send403();
+        Output::jsonOutput($retval);
+        return;
+    }
+}
 
 if ( $old_code == $data->code ) {
     $PDOX->queryDie("INSERT INTO {$p}attend

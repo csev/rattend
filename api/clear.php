@@ -2,7 +2,6 @@
 require_once "../../config.php";
 
 use \Tsugi\Core\LTIX;
-use \Tsugi\Core\Settings;
 use \Tsugi\UI\Output;
 use \Tsugi\Util\U;
 use \Tsugi\Util\Net;
@@ -19,7 +18,11 @@ $data = json_decode($json);
 
 // Model
 $p = $CFG->dbprefix;
-$old_code = Settings::linkGet('code', '');
+$old_code = $LAUNCH->link->settingsGet('code', $old_code);
+$send_grade = $LAUNCH->link->settingsGet('grade');
+$match = $LAUNCH->link->settingsGet('match');
+$ip = Net::getIP();
+
 
 if ( isset($data->code) && $LAUNCH->user->instructor ) {
     $rows = $PDOX->queryDie("DELETE FROM {$p}attend WHERE link_id = :LI",

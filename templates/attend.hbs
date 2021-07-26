@@ -2,7 +2,9 @@
     <table border="1">
     <tr><th>{{__ "User" }}</th><th>{{__ "Attendance" }}</th><th>{{__ "IP Address" }}</th></tr>
     {{#each rows}}
-        <tr><td>{{ user_id }}</td><td>{{ attend }}</td><td>{{ ipaddr }}</td></tr>
+        <tr><td>
+        <a href="#" onclick="alert('{{ displayname }}');"">&nbsp;*******&nbsp;</a>
+        </td><td>{{ attend }}</td><td>{{ ipaddr }}</td></tr>
     {{/each}}
     </table>
 {{/if}}
