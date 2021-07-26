@@ -15,51 +15,33 @@ $LAUNCH = LTIX::requireData();
 $p = $CFG->dbprefix;
 $old_code = Settings::linkGet('code', '');
 
-if ( isset($_POST['code']) && isset($_POST['set']) && $USER->instructor ) {
-    Settings::linkSet('code', $_POST['code']);
-    $_SESSION['success'] = 'Code updated';
-    header( 'Location: '.addSession('index.php') ) ;
-    return;
-} else if ( isset($_POST['clear']) && $USER->instructor ) {
-    $rows = $PDOX->queryDie("DELETE FROM {$p}attend WHERE link_id = :LI",
-            array(':LI' => $LINK->id)
-    );
-    $_SESSION['success'] = 'Data cleared';
-    header( 'Location: '.addSession('index.php') ) ;
-    return;
-} else if ( isset($_POST['code']) ) { // Student
-    if ( $old_code == $_POST['code'] ) {
-        $PDOX->queryDie("INSERT INTO {$p}attend
-            (link_id, user_id, ipaddr, attend, updated_at)
-            VALUES ( :LI, :UI, :IP, NOW(), NOW() )
-            ON DUPLICATE KEY UPDATE updated_at = NOW()",
-            array(
-                ':LI' => $LINK->id,
-                ':UI' => $USER->id,
-                ':IP' => Net::getIP()
-            )
-        );
-        $_SESSION['success'] = __('Attendance Recorded...');
-    } else {
-        $_SESSION['error'] = __('Code incorrect');
-    }
-    header( 'Location: '.addSession('index.php') ) ;
-    return;
-}
-
 // View
 $OUTPUT->header();
 $OUTPUT->bodyStart();
 $OUTPUT->flashMessages();
 $OUTPUT->welcomeUserCourse();
 
-echo("<!-- Handlebars version of the tool -->\n");
-echo('<div id="attend-div"><img src="'.$OUTPUT->getSpinnerUrl().'"></div>'."\n");
+?>
+<!-- Pre-React version of the tool -->
+<form method="post">
+<p><?= __("Enter code:") ?></p>
+<?php if ( $LAUNCH->user->instructor ) { ?>
+<input type="text" name="code" id="code" value="<?= $old_code ?>">
+    <input type="submit" class="btn btn-normal" id="set" name="set" value="<?= __('Update code') ?>">
+    <input type="submit" class="btn btn-warning" id="clear" name="clear" value="<?= __('Clear data') ?>"><br/>
+<?php } else { ?>
+    <input type="text" name="code" id="code" value="">
+    <input type="submit" class="btn btn-normal" id="attend" name="set" value="<?= __('Record attendance') ?>"><br/>
+<?php } ?>
+</form>
+<div id="alert"></div>
+<div id="attend-div"><img src="<?= $OUTPUT->getSpinnerUrl() ?>"></div>
+<?php
 
 $OUTPUT->footerStart();
 $OUTPUT->templateInclude(array('attend'));
 
-if ( $USER->instructor ) {
+if ( $LAUNCH->user->instructor ) {
 ?>
 <script>
 $(document).ready(function(){
@@ -71,6 +53,46 @@ $(document).ready(function(){
         };
         tsugiHandlebarsToDiv('attend-div', 'attend', context);
     }).fail( function() { alert('getJSON fail'); } );
+
+<?php if ( $LAUNCH->user->instructor ) { ?>
+    $("#clear").click(function(e) {
+        e.preventDefault();
+        var code = $("#code").val();
+        $.ajax({
+            type: "POST",
+            url: '<?= addSession('api/clear.php') ?>',
+            dataType: 'json',
+            contentType: 'application/json',
+            async: false,
+            data: JSON.stringify({ "code": code }),
+            success: function () {
+                alert("Thanks!");
+            }
+        });
+    });
+    $("#set").click(function(e) {
+        e.preventDefault();
+        var code = $("#code").val();
+        $.ajax({
+            type: "POST",
+            url: '<?= addSession('api/newcode.php') ?>',
+            dataType: 'json',
+            contentType: 'application/json',
+            async: false,
+            data: JSON.stringify({ "code": code }),
+            success: function () {
+                alert("Thanks!");
+            }
+        });
+    });
+<?php } else { ?>
+    $("#attend").click(function(e) {
+        e.preventDefault();
+        var code = $("#code").val();
+        alert("Attend "+code);
+    });
+<?php } ?>
+
 });
 </script>
 <?php } else { ?>
@@ -80,6 +102,6 @@ $(document).ready(function(){
 });
 </script>
 <?php
-} // End $USER->instructor
+} // End $LAUNCH->user->instructor
 $OUTPUT->footerEnd();
 
