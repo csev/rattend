@@ -4,6 +4,7 @@ require_once "../config.php";
 // The Tsugi PHP API Documentation is available at:
 // http://do1.dr-chuck.com/tsugi/phpdoc/namespaces/Tsugi.html
 
+use \Tsugi\Util\U;
 use \Tsugi\Core\Settings;
 use \Tsugi\UI\SettingsForm;
 use \Tsugi\Core\LTIX;
@@ -11,6 +12,12 @@ use \Tsugi\Util\Net;
 
 // No parameter means we require CONTEXT, USER, and LINK
 $LAUNCH = LTIX::requireData(); 
+
+// If settings were updated
+if ( SettingsForm::handleSettingsPost() ) {
+    header( 'Location: '.U::addSession('index.php') ) ;
+    return;
+}
 
 // Model
 $p = $CFG->dbprefix;
@@ -49,23 +56,21 @@ if ( $USER->instructor ) {
     SettingsForm::text('match',__('Limit access by IP address.  This can be a prefix of an IP address like "142.16.41" or if it starts with a "/" it can be a regular expression (PHP syntax)'));
     echo("<p>Your current IP address is ".htmlentities(Net::getIP())."</p>\n");
     SettingsForm::done();
-    SettingsForm::end();
+    SettingsForm::end(true);
 }
 
 ?>
 <!-- Pre-React version of the tool -->
-<div id="alert"></div>
-<form method="post">
-<p><?= __("Enter code:") ?></p>
 <?php if ( $LAUNCH->user->instructor ) { ?>
-<input type="text" name="code" id="code" value="<?= $old_code ?>">
-<input type="submit" class="btn btn-normal" id="set" name="set" value="<?= __('Update code') ?>">
-</form>
+<div id="alert"></div>
 <div id="attend-div"><img src="<?= $OUTPUT->getSpinnerUrl() ?>"></div>
 <?php } else { ?>
+<p><?= __("Enter code:") ?></p>
+<form method="post">
     <input type="text" name="code" id="code" value="">
     <input type="submit" class="btn btn-normal" id="attend" name="set" value="<?= __('Record attendance') ?>"><br/>
 </form>
+<div id="alert"></div>
 <?php } ?>
 <?php
 
@@ -87,35 +92,15 @@ $(document).ready(function(){
 
     $("#clear").click(function(e) {
         e.preventDefault();
-        var code = $("#code").val();
         $.ajax({
             type: "POST",
-            url: '<?= addSession('api/clear.php') ?>',
+            url: '<?= U::addSession('api/clear.php') ?>',
             dataType: 'json',
             contentType: 'application/json',
-            data: JSON.stringify({ "code": code }),
+            data: JSON.stringify({}),
             success: function (data) {
-                console.log('Data', data);
-                alert("clear "+code);
+                location.reload();
             }
-        });
-    });
-    $("#set").click(function(e) {
-        e.preventDefault();
-        var code = $("#code").val();
-        $.ajax({
-            type: "POST",
-            url: '<?= addSession('api/newcode.php') ?>',
-            dataType: 'json',
-            contentType: 'application/json',
-            data: JSON.stringify({ "code": code }),
-            success: function (data) {
-                console.log('Data', data);
-                alert("Set "+code);
-            }
-        }).done(function(data) {
-                console.log('Data', data);
-                alert("Set "+code);
         });
     });
     $(document).ready(function(){
@@ -124,16 +109,21 @@ $(document).ready(function(){
 <?php } else { ?>
     $("#attend").click(function(e) {
         e.preventDefault();
+        $("#alert").html("");
         var code = $("#code").val();
         $.ajax({
             type: "POST",
-            url: '<?= addSession('api/attend.php') ?>',
+            url: '<?= U::addSession('api/attend.php') ?>',
             dataType: 'json',
             contentType: 'application/json',
             data: JSON.stringify({ "code": code }),
-            success: function(data) { 
-                console.log('Data', data);
-                alert("Attend "+data.status);
+            success: function (data) {
+                console.log('Attend');
+                if ( data.status == "success" ) {
+                    $("#alert").html("Success");
+                } else {
+                    $("#alert").html("Incorrect code");
+                }
             }
         });
     });
