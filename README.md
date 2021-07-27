@@ -1,6 +1,9 @@
 Converting this to React
 ========================
 
+**Make sure to run this with the latest version of Tsugi.  We will be adding APIs
+to Tsugi as we go to suport the evolving needs of this application.**
+
 This application has been switched to REST web services for all of its data.
 There are two main files:
 
