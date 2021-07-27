@@ -56,7 +56,8 @@ if ( $USER->instructor ) {
     SettingsForm::text('match',__('Limit access by IP address.  This can be a prefix of an IP address like "142.16.41" or if it starts with a "/" it can be a regular expression (PHP syntax)'));
     echo("<p>Your current IP address is ".htmlentities(Net::getIP())."</p>\n");
     SettingsForm::done();
-    SettingsForm::end(true);
+    // SettingsForm::end(false);
+    SettingsForm::end(true); // Use API
 }
 
 ?>
